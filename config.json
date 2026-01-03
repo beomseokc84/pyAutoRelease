@@ -1,0 +1,27 @@
+{
+  "repos": {
+    "internal": {
+      "url": "https://gitlab.example.com/group/internal-repo.git",
+      "path": "deploy/artifacts",
+      "target_branch": "main",
+      "token_env": "DEPLOY__INTERNAL__TOKEN"
+    },
+    "external": {
+      "url": "https://github.com/org/external-repo.git",
+      "path": "configs/deploy",
+      "target_branch": "release",
+      "token_env": "DEPLOY__EXTERNAL__TOKEN"
+    }
+  },
+  "file_list": [
+    "version.txt",
+    "manifest.json",
+    "bin/app.exe"
+  ],
+  "logging": {
+    "enabled": true
+  },
+  "report": {
+    "output_dir": "/out"
+  }
+}
