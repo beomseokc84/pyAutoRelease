@@ -1,0 +1,43 @@
+@startuml
+title Git Auth - Sequence (prepare_git_auth)
+
+actor Caller
+participant "prepare_git_auth" as PGA
+participant "build_auth_url_https" as BAU
+participant "detect_provider" as DP
+participant "_pick_username" as PU
+participant "redact_token" as RT
+participant "build_git_env" as BGE
+
+Caller -> PGA : prepare_git_auth(repo_url, token, provider?)
+activate PGA
+
+PGA -> BAU : build_auth_url_https(repo_url, token, provider?)
+activate BAU
+
+alt SSH URL (git@ / ssh://)
+  break SSH URL -> ValueError
+    BAU --> PGA : raise ValueError
+    deactivate BAU
+    PGA --> Caller : exception(ValueError)
+    deactivate PGA
+  end
+else HTTPS URL
+  opt provider not given
+    BAU -> DP : detect_provider(repo_url)
+    DP --> BAU : provider_final
+  end
+
+  BAU -> PU : _pick_username(provider_final)
+  PU --> BAU : username
+  BAU --> PGA : (auth_url, safe_url, provider_final)
+  deactivate BAU
+
+  PGA -> BGE : build_git_env()
+  BGE --> PGA : env(GIT_TERMINAL_PROMPT=0)
+
+  PGA --> Caller : GitAuth(original_url, auth_url, safe_url, env, provider)
+  deactivate PGA
+end
+
+@enduml

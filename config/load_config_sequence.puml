@@ -1,0 +1,68 @@
+@startuml
+title Config Loader - Sequence (load_config)
+
+actor Caller
+participant "loader.load_config" as LC
+participant "load_json_file" as LJF
+participant "apply_defaults" as AD
+participant "deep_merge" as DM
+participant "apply_env_tokens" as AET
+participant "util.validate_required_str" as VRS
+participant "util.require_dict" as RD
+participant "resolve_token" as RT
+participant "validate_config" as VC
+participant "util.validate_optional_bool/str" as VOS
+participant "normalize_paths" as NP
+participant "build_final_config" as BFC
+
+Caller -> LC : load_config(config_path)
+activate LC
+
+LC -> LJF : load_json_file(config_path)
+activate LJF
+LJF --> LC : raw(dict)
+deactivate LJF
+
+LC -> AD : apply_defaults(raw)
+activate AD
+AD -> DM : deep_merge(DEFAULT_CONFIG, raw)
+DM --> AD : merged(dict)
+AD --> LC : merged(dict)
+deactivate AD
+
+LC -> AET : apply_env_tokens(merged)
+activate AET
+AET -> VRS : validate_required_str(repos.internal.token_env)
+AET -> VRS : validate_required_str(repos.external.token_env)
+AET -> RD : require_dict(repos.internal)
+AET -> RD : require_dict(repos.external)
+AET -> RT : resolve_token(internal_env)
+RT --> AET : internal_token
+AET -> RT : resolve_token(external_env)
+RT --> AET : external_token
+AET --> LC : merged에 token 주입
+deactivate AET
+
+LC -> VC : validate_config(merged)
+activate VC
+VC -> VRS : required keys 검증(url/branch/path/token_env)
+VC -> VOS : optional(bool/str) 타입 검증
+VC -> RD : 구조(dict) 검증
+VC --> LC : ok
+deactivate VC
+
+LC -> NP : normalize_paths(merged, base_dir)
+activate NP
+NP -> RD : require_dict(repos.internal/external)
+NP --> LC : report.output_dir / source_path / target_path 정규화
+deactivate NP
+
+LC -> BFC : build_final_config(merged)
+activate BFC
+BFC -> VOS : logging.enabled/build_file_list
+BFC --> LC : FinalConfig
+deactivate BFC
+
+LC --> Caller : FinalConfig
+deactivate LC
+@enduml

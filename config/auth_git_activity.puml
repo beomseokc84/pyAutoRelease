@@ -1,0 +1,32 @@
+@startuml
+title Git Auth - Activity (prepare_git_auth)
+
+start
+:입력(repo_url, token, provider?);
+
+if (repo_url is SSH?) then (yes)
+  :raise ValueError\n(HTTPS URL 필요);
+  stop
+else (no)
+endif
+
+:parse URL (http/https);
+if (scheme valid?) then (yes)
+else (no)
+  :raise ValueError\n(unsupported scheme);
+  stop
+endif
+
+if (provider given?) then (yes)
+  :provider_final = provider;
+else (no)
+  :provider_final = detect_provider(repo_url);
+endif
+
+:username = _pick_username(provider_final);
+:auth_url = https://username:token@host/path;
+:safe_url = redact_token(auth_url, token);
+:env = build_git_env()\n(GIT_TERMINAL_PROMPT=0);
+:return GitAuth(...);
+stop
+@enduml

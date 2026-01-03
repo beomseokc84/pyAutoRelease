@@ -1,0 +1,32 @@
+@startuml
+title Config Loader - Activity (load_config)
+
+start
+:load_json_file(config_path);
+if (JSON parse OK?) then (yes)
+  :apply_defaults(raw)\n(deep_merge DEFAULT_CONFIG);
+else (no)
+  :raise ConfigParseError;
+  stop
+endif
+
+:apply_env_tokens(merged)\n- read token_env\n- resolve_token\n- inject token;
+
+if (env token exists?) then (yes)
+else (no)
+  :raise EnvVarMissingError;
+  stop
+endif
+
+:validate_config(merged)\n- required keys\n- env var 존재 여부\n- file_list\n- optional 타입\n- 구조(dict)\n- token 주입 여부;
+
+if (validate OK?) then (yes)
+else (no)
+  :raise ConfigValidationError;
+  stop
+endif
+
+:normalize_paths(merged)\n- output_dir abs\n- path normalize;
+:build_final_config(merged)\n-> FinalConfig;
+stop
+@enduml
