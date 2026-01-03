@@ -1,0 +1,16 @@
+@startuml
+title Orchestration Activity
+start
+:load config;
+:auth;
+:sync internal;
+:sync external;
+if (build file list?) then (yes)
+  :build file list;
+else (no)
+  :use predefined list or empty;
+endif
+:deploy copy;
+:report;
+stop
+@enduml
